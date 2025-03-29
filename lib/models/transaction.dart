@@ -3,7 +3,7 @@ import 'package:hikari/utils/uuid_generator.dart';
 class Transaction {
   final String id;
   final String userId;
-  final double amount;
+  double amount;
   final String categoryId;
   final DateTime date;
 

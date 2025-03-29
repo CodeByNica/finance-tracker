@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hikari/category_list.dart';
 import 'package:hikari/models/category.dart';
 import 'package:hikari/transaction_list.dart';
 
-class HomeWidget extends StatelessWidget {
+class HomeWidget extends StatefulWidget {
+  const HomeWidget({super.key});
+
+  @override
+  State<HomeWidget> createState() => _HomeWidgetState();
+}
+
+class _HomeWidgetState extends State<HomeWidget> {
+  double get balance => transactions.fold(0, (sum, item) => sum + item.amount);
+
+  double getIncome() {
+    return transactions
+        .where((t) => t.amount > 0 && isCurrentMonth(t.date))
+        .fold(0, (sum, t) => sum + t.amount);
+  }
+
+  double getExpense() {
+    return transactions
+        .where((t) => t.amount < 0 && isCurrentMonth(t.date))
+        .fold(0, (sum, t) => sum + t.amount.abs());
+  }
+
+  bool isCurrentMonth(DateTime date) {
+    DateTime now = DateTime.now();
+    return date.year == now.year && date.month == now.month;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +61,7 @@ class HomeWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 150),
                   Text(
-                    '10000',
+                    balance.toStringAsFixed(0),
                     style: TextStyle(color: Colors.white, fontSize: 30),
                   ),
                 ],
@@ -58,7 +83,10 @@ class HomeWidget extends StatelessWidget {
                     children: [
                       const Text('Доходы', style: TextStyle(fontSize: 25)),
                       SizedBox(height: 10),
-                      Text('5000', style: TextStyle(fontSize: 30)),
+                      Text(
+                        getIncome().toStringAsFixed(0),
+                        style: TextStyle(fontSize: 30),
+                      ),
                     ],
                   ),
                 ),
@@ -75,7 +103,10 @@ class HomeWidget extends StatelessWidget {
                     children: [
                       const Text('Расходы', style: TextStyle(fontSize: 25)),
                       SizedBox(height: 10),
-                      Text('5000', style: TextStyle(fontSize: 30)),
+                      Text(
+                        getExpense().toStringAsFixed(0),
+                        style: TextStyle(fontSize: 30),
+                      ),
                     ],
                   ),
                 ),
@@ -88,7 +119,7 @@ class HomeWidget extends StatelessWidget {
               shrinkWrap: true,
               padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
               physics: NeverScrollableScrollPhysics(),
-              itemCount: transactions.length > 5 ? 5 : transactions.length,
+              itemCount: transactions.length > 6 ? 6 : transactions.length,
               itemBuilder: (context, index) {
                 final transaction = transactions[index];
                 final category = categories.firstWhere(
@@ -141,25 +172,6 @@ class HomeWidget extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      floatingActionButton: SpeedDial(
-        animatedIcon: AnimatedIcons.menu_close,
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        children: [
-          SpeedDialChild(
-            label: 'Добавить расход',
-            labelStyle: TextStyle(fontSize: 17),
-            labelBackgroundColor: Color(0xFFFFD5F0),
-            onTap: () {},
-          ),
-          SpeedDialChild(
-            label: 'Добавить доход',
-            labelStyle: TextStyle(fontSize: 17),
-            labelBackgroundColor: Color(0xFFC4FFAB),
-            onTap: () {},
-          ),
-        ],
       ),
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hikari/models/category.dart';
 import 'package:hikari/category_list.dart';
+import 'package:hikari/transaction_list.dart';
+import 'package:hikari/user_list.dart';
 
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
@@ -11,6 +13,55 @@ class SettingsWidget extends StatefulWidget {
 }
 
 class _SettingsWidgetState extends State<SettingsWidget> {
+  void deleteCategory(String id) {
+    setState(() {
+      categories.removeWhere((category) => category.id == id);
+      transactions.removeWhere((transaction) => transaction.categoryId == id);
+    });
+  }
+
+  void addCategory(bool isIncome) {
+    TextEditingController controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(isIncome ? 'Добавить доход' : 'Добавить расход'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(labelText: 'Название категории'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Отмена'),
+            ),
+            TextButton(
+              onPressed: () {
+                String name = controller.text.trim();
+                if (name.isNotEmpty) {
+                  setState(() {
+                    categories.add(
+                      Category(
+                        userId: users[0].id,
+                        name: name,
+                        isIncome: isIncome,
+                      ),
+                    );
+                  });
+                }
+                Navigator.pop(context);
+              },
+              child: Text('Добавить'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Category> incomeCategories =
@@ -49,13 +100,14 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               'Источники дохода',
               incomeCategories,
               Color(0xFFC4FFAB),
+              () => addCategory(true),
             ),
             const SizedBox(height: 20),
-            //const SizedBox(height: 20),
             _buildCategorySection(
               'Расходы',
               expensesCategories,
               Color(0xFFFFD5F0),
+              () => addCategory(false),
             ),
           ],
         ),
@@ -67,6 +119,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     String title,
     List<Category> categories,
     Color? color,
+    VoidCallback onAddCategory,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +129,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           children: [
             Text(title, style: const TextStyle(fontSize: 20)),
             TextButton(
-              onPressed: () {},
+              onPressed: onAddCategory,
               child: const Text(
                 'Добавить',
                 style: TextStyle(
@@ -107,7 +160,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     Text(category.name, style: const TextStyle(fontSize: 18)),
                     const Spacer(),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => deleteCategory(category.id),
                       icon: const Icon(Icons.delete),
                     ),
                   ],
