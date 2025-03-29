@@ -6,7 +6,6 @@ class Transaction {
   final double amount;
   final String categoryId;
   final DateTime date;
-  final String icon;
 
   Transaction({
     String? id,
@@ -14,6 +13,5 @@ class Transaction {
     required this.amount,
     required this.categoryId,
     required this.date,
-    required this.icon,
   }) : id = id ?? uuid.v4();
 }

@@ -14,6 +14,15 @@ class AnaliticWidget extends StatefulWidget {
 class _AnaliticWidgetState extends State<AnaliticWidget> {
   bool isIncomeChart = false;
 
+  final List<Color> pieColors = [
+    Color(0xFFFFD5F0),
+    Color(0xFFF9E79F),
+    Color(0xFFC4FFAB),
+    Color(0xFF85C1E9),
+    Color(0xFFA569BD),
+    Color(0xFFFFA07A),
+  ];
+
   Map<String, double> calculateCategorySums(
     List<Transaction> transactions,
     bool isIncome,
@@ -33,8 +42,8 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
       if (category.isIncome == isIncome) {
         categorySums.update(
           category.name,
-          (value) => value + transaction.amount,
-          ifAbsent: () => transaction.amount,
+          (value) => value + transaction.amount.abs(),
+          ifAbsent: () => transaction.amount.abs(),
         );
       }
     }
@@ -59,8 +68,8 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
       );
       if (category.isIncome == isIncome) {
         int month = transaction.date.month;
-        transactionsByMonth[month] =
-            (transactionsByMonth[month] ?? 0) + transaction.amount;
+        double amount = transaction.amount.abs();
+        transactionsByMonth[month] = (transactionsByMonth[month] ?? 0) + amount;
       }
     }
     return transactionsByMonth;
@@ -68,13 +77,16 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, double> expenseCategories = calculateCategorySums(
-      transactions,
-      false,
-    );
-    Map<String, double> incomeCategories = calculateCategorySums(
-      transactions,
-      true,
+    int selectedMonth = DateTime.now().month;
+
+    List<Transaction> filteredTransactions =
+        transactions
+            .where((transaction) => transaction.date.month == selectedMonth)
+            .toList();
+
+    Map<String, double> categoryData = calculateCategorySums(
+      filteredTransactions,
+      isIncomeChart,
     );
 
     List<FlSpot> spots =
@@ -105,9 +117,10 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                       },
                       style: TextButton.styleFrom(
                         backgroundColor:
-                            isIncomeChart ? Colors.grey[300] : Colors.black,
-                        foregroundColor:
-                            isIncomeChart ? Colors.black : Colors.white,
+                            isIncomeChart
+                                ? Colors.grey[200]
+                                : Color(0xFFFFD5F0),
+                        foregroundColor: Colors.black,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -121,7 +134,7 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                         style: TextStyle(fontSize: 18),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 25),
                     TextButton(
                       onPressed: () {
                         setState(() {
@@ -130,9 +143,10 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                       },
                       style: TextButton.styleFrom(
                         backgroundColor:
-                            isIncomeChart ? Colors.black : Colors.grey[300],
-                        foregroundColor:
-                            isIncomeChart ? Colors.white : Colors.black,
+                            isIncomeChart
+                                ? Color(0xFFC4FFAB)
+                                : Colors.grey[200],
+                        foregroundColor: Colors.black,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -145,6 +159,7 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                     ),
                   ],
                 ),
+                SizedBox(height: 20),
                 SizedBox(
                   height: 300,
                   child: LineChart(
@@ -153,15 +168,20 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                         LineChartBarData(
                           spots: spots,
                           isCurved: true,
-                          color: Colors.black,
+                          color:
+                              isIncomeChart
+                                  ? Color.fromARGB(255, 183, 245, 156)
+                                  : Color.fromARGB(255, 255, 185, 231),
                         ),
                       ],
                     ),
                   ),
                 ),
                 SizedBox(height: 15),
-                const Text(
-                  'Расходы по категориям',
+                Text(
+                  isIncomeChart
+                      ? 'Доходы по категориям'
+                      : 'Расходы по категориям',
                   style: TextStyle(fontSize: 20),
                 ),
                 SizedBox(height: 10),
@@ -171,39 +191,47 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
                   child: PieChart(
                     PieChartData(
                       sections:
-                          expenseCategories.entries.map((entry) {
+                          categoryData.entries.map((entry) {
+                            int index = categoryData.keys.toList().indexOf(
+                              entry.key,
+                            );
                             return PieChartSectionData(
                               value: entry.value,
-                              title: entry.key,
-                              color: Color(0xFFFFD5F0),
+                              color: pieColors[index % pieColors.length],
                               radius: 50,
+                              showTitle: false,
                             );
                           }).toList(),
                     ),
                   ),
                 ),
-                SizedBox(height: 10),
-                const Text(
-                  "Доходы по категориям",
-                  style: TextStyle(fontSize: 20),
-                ),
-                SizedBox(height: 10),
-                SizedBox(
-                  width: 170,
-                  height: 170,
-                  child: PieChart(
-                    PieChartData(
-                      sections:
-                          incomeCategories.entries.map((entry) {
-                            return PieChartSectionData(
-                              value: entry.value,
-                              title: entry.key,
-                              color: Color(0xFFC4FFAB),
-                              radius: 50,
-                            );
-                          }).toList(),
-                    ),
-                  ),
+                SizedBox(height: 20),
+                Column(
+                  children:
+                      categoryData.entries.map((entry) {
+                        int index = categoryData.keys.toList().indexOf(
+                          entry.key,
+                        );
+                        return Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: pieColors[index % pieColors.length],
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(entry.key, style: TextStyle(fontSize: 16)),
+                            Spacer(),
+                            Text(
+                              '${entry.value.abs().toStringAsFixed(2)}',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        );
+                      }).toList(),
                 ),
               ],
             ),
