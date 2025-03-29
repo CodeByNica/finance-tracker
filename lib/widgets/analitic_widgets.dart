@@ -1,5 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:hikari/category_list.dart';
+import 'package:hikari/models/category.dart';
 import 'package:hikari/models/transaction.dart';
 import 'package:hikari/transaction_list.dart';
 
@@ -18,9 +20,19 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
   ) {
     Map<String, double> categorySums = {};
     for (var transaction in transactions) {
-      if (transaction.isIncome == isIncome) {
+      final category = categories.firstWhere(
+        (c) => c.id == transaction.categoryId,
+        orElse:
+            () => Category(
+              id: '',
+              userId: '',
+              name: 'Неизвестно',
+              isIncome: false,
+            ),
+      );
+      if (category.isIncome == isIncome) {
         categorySums.update(
-          transaction.category,
+          category.name,
           (value) => value + transaction.amount,
           ifAbsent: () => transaction.amount,
         );
@@ -34,11 +46,21 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
     bool isIncome,
   ) {
     Map<int, double> transactionsByMonth = {};
-    for (var transation in transations) {
-      if (transation.isIncome == isIncome) {
-        int month = transation.date.month;
+    for (var transaction in transations) {
+      final category = categories.firstWhere(
+        (c) => c.id == transaction.categoryId,
+        orElse:
+            () => Category(
+              id: '',
+              userId: '',
+              name: 'Неизвестно',
+              isIncome: false,
+            ),
+      );
+      if (category.isIncome == isIncome) {
+        int month = transaction.date.month;
         transactionsByMonth[month] =
-            (transactionsByMonth[month] ?? 0) + transation.amount;
+            (transactionsByMonth[month] ?? 0) + transaction.amount;
       }
     }
     return transactionsByMonth;

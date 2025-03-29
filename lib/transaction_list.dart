@@ -1,46 +1,63 @@
 import 'package:hikari/models/transaction.dart';
+import 'package:hikari/utils/uuid_generator.dart';
+import 'package:hikari/category_list.dart';
+import 'package:hikari/user_list.dart';
 
 final List<Transaction> transactions = [
   Transaction(
-    category: 'Зарплата',
+    id: uuid.v4(),
+    userId: users[0].id,
+    categoryId: categories[0].id, // Зарплата
     amount: 10000,
     date: DateTime.now(),
-    isIncome: true,
+    icon: 'attach_money', // Иконка денег
   ),
   Transaction(
-    category: 'Продукты',
+    id: uuid.v4(),
+    userId: users[0].id,
+    categoryId: categories[1].id, // Продукты
     amount: -1000,
     date: DateTime.now(),
-    isIncome: false,
+    icon: 'shopping_cart', // Иконка корзины
   ),
   Transaction(
-    category: 'Транспорт',
+    id: uuid.v4(),
+    userId: users[1].id,
+    categoryId: categories[2].id, // Транспорт
     amount: -3000,
     date: DateTime.now(),
-    isIncome: false,
+    icon: 'directions_bus', // Иконка автобуса
   ),
   Transaction(
-    category: 'Ресторан',
+    id: uuid.v4(),
+    userId: users[1].id,
+    categoryId: categories[3].id, // Ресторан
     amount: -6000,
     date: DateTime.utc(2025, 2, 27),
-    isIncome: false,
+    icon: 'restaurant', // Иконка ресторана
   ),
   Transaction(
-    category: 'Перевод',
+    id: uuid.v4(),
+    userId: users[0].id,
+    categoryId: categories[0].id, // Перевод
     amount: 36000,
     date: DateTime.utc(2025, 2, 15),
-    isIncome: true,
+    icon: 'sync_alt', // Иконка перевода
   ),
   Transaction(
-    category: 'Аптека',
+    id: uuid.v4(),
+    userId: users[0].id,
+    categoryId: categories[1].id, // Аптека
     amount: -900,
     date: DateTime.utc(2025, 2, 14),
-    isIncome: false,
+    icon: 'local_hospital', // Иконка аптеки
   ),
   Transaction(
-    category: 'Продукты',
+    id: uuid.v4(),
+    userId: users[1].id,
+    categoryId: categories[1].id, // Продукты
     amount: -1500,
     date: DateTime.utc(2025, 2, 11),
-    isIncome: false,
+    icon: 'shopping_cart', // Иконка корзины
   ),
 ];

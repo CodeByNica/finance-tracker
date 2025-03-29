@@ -37,6 +37,7 @@ dependencies:
   font_awesome_flutter: ^10.0.0
   flutter_speed_dial: ^7.0.0
   fl_chart: ^0.70.2
+  uuid: ^4.4.2
 
 dev_dependencies:
   flutter_test:

@@ -1,13 +1,19 @@
+import 'package:hikari/utils/uuid_generator.dart';
+
 class Transaction {
-  final String category;
+  final String id;
+  final String userId;
   final double amount;
+  final String categoryId;
   final DateTime date;
-  final bool isIncome;
+  final String icon;
 
   Transaction({
-    required this.category,
+    String? id,
+    required this.userId,
     required this.amount,
+    required this.categoryId,
     required this.date,
-    required this.isIncome,
-  });
+    required this.icon,
+  }) : id = id ?? uuid.v4();
 }

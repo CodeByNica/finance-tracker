@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:hikari/category_list.dart';
+import 'package:hikari/models/category.dart';
 import 'package:hikari/transaction_list.dart';
 
 class TransactionWidget extends StatelessWidget {
@@ -18,6 +20,16 @@ class TransactionWidget extends StatelessWidget {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
+              final category = categories.firstWhere(
+                (c) => c.id == transaction.categoryId,
+                orElse:
+                    () => Category(
+                      id: '',
+                      userId: '',
+                      name: 'Неизвестно',
+                      isIncome: false,
+                    ),
+              );
               return ListTile(
                 leading: Container(
                   width: 101,
@@ -25,7 +37,7 @@ class TransactionWidget extends StatelessWidget {
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color:
-                        transaction.isIncome
+                        category.isIncome
                             ? Color(0xFFC4FFAB)
                             : Color(0xFFFFD5F0),
                     borderRadius: BorderRadius.circular(8),
@@ -38,10 +50,7 @@ class TransactionWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                title: Text(
-                  transaction.category,
-                  style: TextStyle(fontSize: 20),
-                ),
+                title: Text(category.name, style: TextStyle(fontSize: 20)),
                 subtitle: Text(
                   '${transaction.date.day}.${transaction.date.month}.${transaction.date.year}',
                 ),
