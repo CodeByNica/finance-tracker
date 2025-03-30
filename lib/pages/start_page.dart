@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hikari/pages/registration_page.dart';
 import 'package:hikari/pages/home_page.dart';
 import 'package:hikari/models/user.dart';
-import 'package:hikari/user_list.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class StartPage extends StatefulWidget {
   const StartPage({super.key});
@@ -25,7 +25,9 @@ class _StartPageState extends State<StartPage> {
       return;
     }
 
-    User? user = users.firstWhere(
+    var box = Hive.box<User>('users');
+
+    User? user = box.values.firstWhere(
       (u) => u.email == email && u.password == password,
       orElse: () => User(id: '', name: '', email: '', password: ''),
     );
@@ -33,6 +35,8 @@ class _StartPageState extends State<StartPage> {
     if (user.id.isEmpty) {
       _showError('Неверная почта или пароль');
     } else {
+      var settingsBox = Hive.box('settings');
+      settingsBox.put('currentUserId', user.id);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MyHomePage()),
@@ -44,6 +48,23 @@ class _StartPageState extends State<StartPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    var settingsBox = Hive.box('settings');
+    String? userId = settingsBox.get('currentUserId');
+
+    if (userId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MyHomePage()),
+        );
+      });
+    }
   }
 
   @override

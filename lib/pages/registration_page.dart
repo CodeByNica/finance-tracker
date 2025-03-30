@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hikari/pages/start_page.dart';
 import 'package:hikari/pages/home_page.dart';
 import 'package:hikari/models/user.dart';
-import 'package:hikari/user_list.dart';
 import 'package:hikari/utils/uuid_generator.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -27,7 +27,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
       return;
     }
 
-    bool emailExists = users.any((user) => user.email == email);
+    var box = Hive.box<User>('users');
+
+    bool emailExists = box.values.any((user) => user.email == email);
     if (emailExists) {
       _showError("Пользователь с такой почтой уже зарегистрирован");
       return;
@@ -40,7 +42,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
       password: password,
     );
 
-    users.add(newUser);
+    box.put(newUser.id, newUser);
+
+    var settingsBox = Hive.box('settings');
+    settingsBox.put('currentUserId', newUser.id);
 
     Navigator.pushReplacement(
       context,

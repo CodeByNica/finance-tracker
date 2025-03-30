@@ -3,6 +3,7 @@ import 'package:hikari/widgets/home_widgets.dart';
 import 'package:hikari/widgets/transaction_widgets.dart';
 import 'package:hikari/widgets/analitic_widgets.dart';
 import 'package:hikari/widgets/settings_widgets.dart';
+import 'package:hive/hive.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -12,6 +13,20 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int currentPageIndex = 0;
+  String? currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserId();
+  }
+
+  void loadUserId() {
+    final settingsBox = Hive.box('settings');
+    setState(() {
+      currentUserId = settingsBox.get('currentUserId');
+    });
+  }
 
   void onSelectedItem(int index) {
     setState(() {
@@ -22,13 +37,13 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget getCurrentPage() {
     switch (currentPageIndex) {
       case 0:
-        return HomeWidget();
+        return HomeWidget(currentUserId: currentUserId!);
       case 1:
-        return TransactionWidget();
+        return TransactionWidget(currentUserId: currentUserId!);
       case 2:
-        return AnaliticWidget();
+        return AnaliticWidget(currentUserId: currentUserId!);
       case 3:
-        return SettingsWidget();
+        return SettingsWidget(currentUserId: currentUserId!);
       default:
         return const Center(child: Text('Page???'));
     }

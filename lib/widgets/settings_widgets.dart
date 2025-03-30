@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hikari/models/category.dart';
-import 'package:hikari/category_list.dart';
-import 'package:hikari/transaction_list.dart';
-import 'package:hikari/user_list.dart';
 import 'package:hikari/pages/start_page.dart';
+import 'package:hive/hive.dart';
 
 class SettingsWidget extends StatefulWidget {
-  const SettingsWidget({super.key});
+  final String currentUserId;
+  const SettingsWidget({super.key, required this.currentUserId});
 
   @override
   State<SettingsWidget> createState() => _SettingsWidgetState();
 }
 
 class _SettingsWidgetState extends State<SettingsWidget> {
+  late Box<Category> categoryBox;
+  @override
+  void initState() {
+    super.initState();
+    categoryBox = Hive.box<Category>('categories');
+  }
+
   void deleteCategory(String id) {
     setState(() {
-      categories.removeWhere((category) => category.id == id);
-      transactions.removeWhere((transaction) => transaction.categoryId == id);
+      categoryBox.delete(id);
     });
   }
 
@@ -43,14 +48,13 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               onPressed: () {
                 String name = controller.text.trim();
                 if (name.isNotEmpty) {
+                  final newCategory = Category(
+                    isIncome: isIncome,
+                    name: name,
+                    userId: widget.currentUserId,
+                  );
                   setState(() {
-                    categories.add(
-                      Category(
-                        userId: users[0].id,
-                        name: name,
-                        isIncome: isIncome,
-                      ),
-                    );
+                    categoryBox.put(newCategory.id, newCategory);
                   });
                 }
                 Navigator.pop(context);
@@ -65,25 +69,34 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   Widget build(BuildContext context) {
+    List<Category> userCategories =
+        categoryBox.values
+            .where((c) => c.userId == widget.currentUserId)
+            .toList();
     List<Category> incomeCategories =
-        categories.where((c) => c.isIncome).toList();
+        userCategories.where((c) => c.isIncome).toList();
     List<Category> expensesCategories =
-        categories.where((c) => !c.isIncome).toList();
+        userCategories.where((c) => !c.isIncome).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hello Alice', style: TextStyle(fontSize: 30)),
+        title: const Text('Настройки', style: TextStyle(fontSize: 30)),
         leading: const Padding(
           padding: EdgeInsets.only(left: 20.0),
           child: Icon(FontAwesomeIcons.coins, size: 27),
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const StartPage()),
-              );
+            onPressed: () async {
+              final settingsBox = Hive.box('settings');
+              await settingsBox.delete('currentUserId');
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StartPage()),
+                  (route) => false,
+                );
+              }
             },
             iconSize: 35,
             icon: const Icon(Icons.exit_to_app),

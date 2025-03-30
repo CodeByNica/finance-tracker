@@ -1,12 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:hikari/category_list.dart';
 import 'package:hikari/models/category.dart';
 import 'package:hikari/models/transaction.dart';
-import 'package:hikari/transaction_list.dart';
+import 'package:hive/hive.dart';
 
 class AnaliticWidget extends StatefulWidget {
-  const AnaliticWidget({super.key});
+  final String currentUserId;
+  const AnaliticWidget({super.key, required this.currentUserId});
   @override
   State<AnaliticWidget> createState() => _AnaliticWidgetState();
 }
@@ -28,17 +28,11 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
     bool isIncome,
   ) {
     Map<String, double> categorySums = {};
+    final categoryBox = Hive.box<Category>('categories');
     for (var transaction in transactions) {
-      final category = categories.firstWhere(
-        (c) => c.id == transaction.categoryId,
-        orElse:
-            () => Category(
-              id: '',
-              userId: '',
-              name: 'Неизвестно',
-              isIncome: false,
-            ),
-      );
+      final category =
+          categoryBox.get(transaction.categoryId) ??
+          Category(id: '', userId: '', name: 'Неизвестно', isIncome: false);
       if (category.isIncome == isIncome) {
         categorySums.update(
           category.name,
@@ -55,17 +49,11 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
     bool isIncome,
   ) {
     Map<int, double> transactionsByMonth = {};
+    final categoryBox = Hive.box<Category>('categories');
     for (var transaction in transations) {
-      final category = categories.firstWhere(
-        (c) => c.id == transaction.categoryId,
-        orElse:
-            () => Category(
-              id: '',
-              userId: '',
-              name: 'Неизвестно',
-              isIncome: false,
-            ),
-      );
+      final category =
+          categoryBox.get(transaction.categoryId) ??
+          Category(id: '', userId: '', name: 'Неизвестно', isIncome: false);
       if (category.isIncome == isIncome) {
         int month = transaction.date.month;
         double amount = transaction.amount.abs();
@@ -77,12 +65,15 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final transactionBox = Hive.box<Transaction>('transactions');
+    final List<Transaction> userTransactions =
+        transactionBox.values
+            .where((t) => t.userId == widget.currentUserId)
+            .toList();
     int selectedMonth = DateTime.now().month;
 
     List<Transaction> filteredTransactions =
-        transactions
-            .where((transaction) => transaction.date.month == selectedMonth)
-            .toList();
+        userTransactions.where((t) => t.date.month == selectedMonth).toList();
 
     Map<String, double> categoryData = calculateCategorySums(
       filteredTransactions,
@@ -90,11 +81,12 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
     );
 
     List<FlSpot> spots =
-        getTransactionsByMonth(transactions, isIncomeChart).entries
+        getTransactionsByMonth(userTransactions, isIncomeChart).entries
             .map(
               (entry) => FlSpot(entry.key.toDouble(), entry.value.toDouble()),
             )
             .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Аналитика', style: TextStyle(fontSize: 27)),

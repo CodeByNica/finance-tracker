@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:hikari/category_list.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hikari/models/category.dart';
 import 'package:hikari/models/transaction.dart';
-import 'package:hikari/transaction_list.dart';
-import 'package:hikari/user_list.dart';
 
 class TransactionWidget extends StatefulWidget {
-  const TransactionWidget({super.key});
+  final String currentUserId;
+
+  const TransactionWidget({super.key, required this.currentUserId});
+
   @override
   State<TransactionWidget> createState() => _TransactionWidgetState();
 }
 
 class _TransactionWidgetState extends State<TransactionWidget> {
+  late Box<Transaction> transactionBox;
+  late Box<Category> categoryBox;
+
+  @override
+  void initState() {
+    super.initState();
+    transactionBox = Hive.box<Transaction>('transactions');
+    categoryBox = Hive.box<Category>('categories');
+  }
+
   void deleteTransaction(String transactionId) {
-    setState(() {
-      transactions.removeWhere(
-        (transaction) => transaction.id == transactionId,
-      );
-    });
+    transactionBox.delete(transactionId);
   }
 
   void editTransaction(BuildContext context, Transaction transaction) {
@@ -37,9 +45,6 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                 controller: amountController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: 'Сумма'),
-                onChanged: (value) {
-                  setStateDialog(() {});
-                },
               ),
               actions: [
                 TextButton(
@@ -50,9 +55,8 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                   onPressed: () {
                     double? newAmount = double.tryParse(amountController.text);
                     if (newAmount != null) {
-                      setState(() {
-                        transaction.amount = newAmount;
-                      });
+                      transaction.amount = newAmount;
+                      transactionBox.put(transaction.id, transaction);
                     }
                     Navigator.pop(context);
                   },
@@ -75,7 +79,6 @@ class _TransactionWidgetState extends State<TransactionWidget> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            // Локальный setState для диалога
             return AlertDialog(
               title: Text(isIncome ? 'Добавить доход' : 'Добавить расход'),
               content: Column(
@@ -91,17 +94,21 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                     hint: Text('Выберите категорию'),
                     isExpanded: true,
                     items:
-                        categories.where((c) => c.isIncome == isIncome).map((
-                          category,
-                        ) {
-                          return DropdownMenuItem(
-                            value: category,
-                            child: Text(category.name),
-                          );
-                        }).toList(),
+                        categoryBox.values
+                            .where(
+                              (c) =>
+                                  c.userId == widget.currentUserId &&
+                                  c.isIncome == isIncome,
+                            )
+                            .map((category) {
+                              return DropdownMenuItem(
+                                value: category,
+                                child: Text(category.name),
+                              );
+                            })
+                            .toList(),
                     onChanged: (value) {
                       setStateDialog(() {
-                        // Обновляем UI внутри диалога
                         selectedCategory = value;
                       });
                     },
@@ -120,18 +127,16 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                       double amount =
                           double.tryParse(amountController.text) ?? 0;
                       if (amount > 0) {
-                        setState(() {
-                          // Обновляем основной экран
-                          transactions.add(
-                            Transaction(
-                              id: DateTime.now().toString(),
-                              userId: users[0].id,
-                              amount: isIncome ? amount : -amount,
-                              categoryId: selectedCategory!.id,
-                              date: DateTime.now(),
-                            ),
-                          );
-                        });
+                        transactionBox.put(
+                          DateTime.now().toString(),
+                          Transaction(
+                            id: DateTime.now().toString(),
+                            userId: widget.currentUserId,
+                            amount: isIncome ? amount : -amount,
+                            categoryId: selectedCategory!.id,
+                            date: DateTime.now(),
+                          ),
+                        );
                         Navigator.pop(context);
                       }
                     }
@@ -153,24 +158,29 @@ class _TransactionWidgetState extends State<TransactionWidget> {
         title: Text('Транзакции', style: TextStyle(fontSize: 28)),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: transactions.length,
+      body: ValueListenableBuilder<Box<Transaction>>(
+        valueListenable: Hive.box<Transaction>('transactions').listenable(),
+        builder: (context, Box box, _) {
+          final userTransactions =
+              box.values
+                  .cast<Transaction>()
+                  .where((t) => t.userId == widget.currentUserId)
+                  .toList();
+
+          return ListView.builder(
+            itemCount: userTransactions.length,
             itemBuilder: (context, index) {
-              final transaction = transactions[index];
-              final category = categories.firstWhere(
-                (c) => c.id == transaction.categoryId,
-                orElse:
-                    () => Category(
-                      id: '',
-                      userId: '',
-                      name: 'Неизвестно',
-                      isIncome: false,
-                    ),
-              );
+              final transaction = userTransactions[index];
+              final category =
+                  Hive.box<Category>(
+                    'categories',
+                  ).get(transaction.categoryId) ??
+                  Category(
+                    id: '',
+                    userId: '',
+                    name: 'Неизвестно',
+                    isIncome: false,
+                  );
               return ListTile(
                 leading: Container(
                   width: 101,
@@ -210,8 +220,8 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                 ),
               );
             },
-          ),
-        ],
+          );
+        },
       ),
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
