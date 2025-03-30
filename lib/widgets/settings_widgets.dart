@@ -4,6 +4,7 @@ import 'package:hikari/models/category.dart';
 import 'package:hikari/category_list.dart';
 import 'package:hikari/transaction_list.dart';
 import 'package:hikari/user_list.dart';
+import 'package:hikari/pages/start_page.dart';
 
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
@@ -78,7 +79,12 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const StartPage()),
+              );
+            },
             iconSize: 35,
             icon: const Icon(Icons.exit_to_app),
           ),
