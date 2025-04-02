@@ -38,7 +38,8 @@ class _HomeWidgetState extends State<HomeWidget> {
   List<Transaction> get transactions =>
       transactionsBox.values
           .where((t) => t.userId == widget.currentUserId)
-          .toList();
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
 
   List<Category> get categories =>
       categoriesBox.values

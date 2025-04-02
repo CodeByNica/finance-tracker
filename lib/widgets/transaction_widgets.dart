@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:hive/hive.dart';
+//import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hikari/models/category.dart';
 import 'package:hikari/models/transaction.dart';
@@ -165,7 +165,8 @@ class _TransactionWidgetState extends State<TransactionWidget> {
               box.values
                   .cast<Transaction>()
                   .where((t) => t.userId == widget.currentUserId)
-                  .toList();
+                  .toList()
+                ..sort((a, b) => b.date.compareTo(a.date));
 
           return ListView.builder(
             itemCount: userTransactions.length,

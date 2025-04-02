@@ -21,6 +21,8 @@ class _AnaliticWidgetState extends State<AnaliticWidget> {
     Color(0xFF85C1E9),
     Color(0xFFA569BD),
     Color(0xFFFFA07A),
+    Color.fromARGB(255, 140, 248, 197),
+    Color.fromARGB(255, 238, 93, 93),
   ];
 
   Map<String, double> calculateCategorySums(
